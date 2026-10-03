@@ -23,7 +23,7 @@ Projektbericht und SPS-Steuerungslogik für ein automatisiertes Hydroponik-Gewä
    * Temperaturprüfung: Sollwertbereich $20{,}0\,^\circ\text{C} \le T \le 35{,}5\,^\circ\text{C}$
    * Feuchtigkeitsprüfung: Sollwertbereich $20{,}0\,^\circ\text{C} \le T \le 60{,}0\,^\circ\text{C}$
 2. **Nährstofffüllstand:**
-   * Auswertung des induktiven Sensors (`SensorRawValue_Dist`). Bei Pegelabfall wird Alarm ausgelöst.
+   * Auswertung des induktiven Sensors (`SensorRawValue_Dist`). Bei Abfall des Nährstoffflusses wird Alarm ausgelöst.
 3. **Wachstum / Fruchtreife (Radar):**
    * Erkennt der Radarsensor einen Abstand im Bereich `10000 bis 15000` (entspricht $1{,}0\text{ m} - 1{,}5\text{ m}$), wird Fruchtreife/Beschnitt gemeldet (Rote Warnlampe).
 4. **Fehler- und Alarmpriorisierung (LED-Farbcodierung):**
