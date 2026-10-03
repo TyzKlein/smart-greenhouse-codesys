@@ -1,0 +1,123 @@
+PROGRAM PLC_PRG
+VAR
+   SensorRawValue : WORD;          // Rohwert vom Sensorregister (z. B. 480)
+   SensorRawValue_Humi : WORD;       // z. B. 5100 → 85 % (wenn z. B. ÷60)
+   SensorRawValue_Dist : BOOL;       // induktionssensor : ja/nein
+   IsRedDetected : DINT;
+   
+ 
+
+    Temp_Celsius : REAL;          // Eingangswert vom Sensor
+    Humidity : REAL;                 // Luftfeuchtigkeit in %
+	Anzeig_Farbe : USINT;
+    LED : USINT;     
+	Temp_Okay : BOOL := FALSE;
+	Humidity_Okay : BOOL;
+	
+//Farbe der Anzeigelampe anpassen
+	Temp_Lampe : BOOL;
+	Humidity_Lampe : BOOL;
+	Wasser_Lampe : BOOL;
+	Tomaten_Lampe : BOOL;
+	Alles_Lampe : BOOL;
+	
+// Button zum Ein/Ausschalten des Dauerlichts
+   Digi_Button   : BOOL;      // externer Schließer
+   LED_Enabled   : BOOL := TRUE;
+   Digi_Button_Vorher : BOOL := FALSE;
+	
+END_VAR
+
+
+
+// Temperatur berechnen: Registerwert ÷ 20
+Temp_Celsius := WORD_TO_REAL(SensorRawValue) / 20.0;
+// Feuchtigkeit berechnen: Registerwert ÷ 100
+Humidity := WORD_TO_REAL(SensorRawValue_Humi) / 100.0;  // z. B. 8500 → 85.0 %
+ 
+
+// Temperatur Humidity prüfen
+Temp_Okay := (Temp_Celsius >= 20) AND (Temp_Celsius <= 35.5);
+Humidity_Okay := (Humidity >= 20.0) AND (Humidity <= 60);
+
+// 3. Button-Flanke erkennen und LED toggle
+
+IF Digi_Button AND NOT Digi_Button_Vorher THEN
+   LED_Enabled := NOT LED_Enabled;
+END_IF;
+Digi_Button_Vorher := Digi_Button;
+
+
+// Lampen zurücksetzen
+Temp_Lampe := FALSE;
+Humidity_Lampe := FALSE ;
+Wasser_Lampe := FALSE ;
+Tomaten_Lampe := FALSE ;
+Alles_Lampe := FALSE;
+LED := 0; 
+
+IF  LED_Enabled THEN	
+	IF (NOT Humidity_Okay) AND SensorRawValue_Dist AND (NOT Temp_Okay)  THEN
+		LED := 1;        // Blinken einschalten
+		Anzeig_Farbe := 13; // Grundfarbe (z.B. "braun")
+		Wasser_Lampe := TRUE; // Visuelle Lampe leuchtet
+		Humidity_Lampe := TRUE; 
+		Temp_Lampe := TRUE;
+		Alles_Lampe := TRUE;
+		
+	ELSIF (NOT Humidity_Okay) AND SensorRawValue_Dist  THEN
+		LED := 1;        // Blinken einschalten
+		Anzeig_Farbe := 11; // Grundfarbe (z.B. "braun")
+		Wasser_Lampe := TRUE; // Visuelle Lampe leuchtet
+		Humidity_Lampe := TRUE;
+		Alles_Lampe := TRUE;
+	
+		
+	ELSIF (NOT Temp_Okay) AND SensorRawValue_Dist  THEN
+		LED := 1;        // Blinken einschalten
+		Anzeig_Farbe := 10; // Grundfarbe (z.B. "braun")
+		Wasser_Lampe := TRUE; // Visuelle Lampe leuchtet
+		Temp_Lampe := TRUE;
+		Alles_Lampe := TRUE;
+		
+	ELSIF SensorRawValue_Dist THEN
+		LED := 1;        // Blinken einschalten
+		Anzeig_Farbe := 0; // Grundfarbe (z.B. "braun")
+		Wasser_Lampe := TRUE; // Visuelle Lampe leuchtet
+		Alles_Lampe := TRUE;
+	
+		
+	ELSIF (NOT Temp_Okay) AND (NOT Humidity_Okay) THEN
+		LED := 1;
+		Anzeig_Farbe := 12;
+		Temp_Lampe := TRUE;
+		Humidity_Lampe := TRUE;
+		Alles_Lampe := TRUE;
+		
+	ELSIF (NOT Humidity_Okay) THEN
+		LED := 1;
+		Anzeig_Farbe := 9; // Blau
+		Humidity_Lampe := TRUE; // Visuelle Lampe leuchtet
+		Alles_Lampe := TRUE;
+	ELSIF (NOT Temp_Okay) THEN
+		LED := 1;
+		Anzeig_Farbe := 4; // Gelb
+		Temp_Lampe := TRUE; // Visuelle Lampe leuchtet
+		Alles_Lampe := TRUE; // Visuelle Lampe leuchtet
+		
+	ELSIF (IsRedDetected >= 10000) AND (IsRedDetected <= 15000) THEN 
+			LED := 2;
+			Anzeig_Farbe := 1; // Rot
+			Tomaten_Lampe := TRUE;// Visuelle Lampe leuchtet
+			Alles_Lampe := TRUE;
+		
+	ELSE
+		//kein Alarm
+		LED := 0;        // sonst LED aus
+	END_IF;
+	
+ELSE
+  // Sobald Button gedrückt: LED aus
+  LED := 0;
+
+END_IF
